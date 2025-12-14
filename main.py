@@ -10,6 +10,7 @@ from pages.login_page import LoginPage
 from pages.registration_page import RegistrationPage
 from pages.upload_page import UploadPage
 from database.models import User
+from pages.notifications_page import NotificationsPage
 
 try:
     from database.init_db import initialize_database
@@ -36,15 +37,25 @@ def main(page: ft.Page):
     theme_manager = ThemeManager()
     
     current_page = ft.Ref[str]()
-    current_page.current = "login" if db_manager else "home"
     current_user = ft.Ref[User]()
     current_user.current = None
+
+    # Determinar página inicial
+    def get_initial_page():
+        if not db_manager:
+            return "home"
+        
+        # Si hay usuarios, mostrar login. Si no, mostrar registro
+        return "login" if db_manager.has_users() else "registration"
+
+    current_page.current = get_initial_page()
     
     home_page = HomePage(theme_manager, db_manager)
     profile_page = ProfilePage(theme_manager, db_manager)
     edit_profile_page = EditProfilePage(theme_manager, db_manager, page)
     settings_page = SettingsPage(theme_manager, db_manager)
     map_page = MapPage(theme_manager, db_manager)
+    notifications_page = NotificationsPage(theme_manager, db_manager)
     login_page = None
     registration_page = None
     upload_page = None
@@ -187,6 +198,31 @@ def main(page: ft.Page):
         update_navigation()
         page.update()
     
+    def show_notifications_page(e=None):
+        if not current_user.current:
+            return
+        
+        previous_page = current_page.current
+        current_page.current = "notifications"
+        
+        def go_back():
+            if previous_page == "home":
+                show_home_page()
+            elif previous_page == "profile":
+                show_profile_page()
+            elif previous_page == "map":
+                show_map_page()
+            else:
+                show_home_page()
+        
+        notifications_page.set_user(current_user.current)
+        notifications_page.on_back = go_back
+        notifications_page.page_callbacks = page_callbacks
+        main_content.content = notifications_page.create_content()
+        update_theme()
+        hide_navigation()
+        page.update()
+    
     def update_theme():
         colors = theme_manager.get_theme_colors()
         page.bgcolor = colors["page_bg"]
@@ -208,6 +244,8 @@ def main(page: ft.Page):
             registration_page.update_theme()
         elif current_page.current == "upload" and upload_page:
             upload_page.update_theme()
+        elif current_page.current == "notifications":
+            notifications_page.update_theme()
         
         page.update()
     
@@ -228,6 +266,7 @@ def main(page: ft.Page):
         "show_profile": show_profile_page,
         "show_map": show_map_page,
         "show_upload": show_upload_page,
+        "show_notifications": show_notifications_page,
         "show_edit_profile": show_edit_profile_page,
         "show_settings": show_settings_page,
         "update_theme": update_theme,
@@ -235,6 +274,17 @@ def main(page: ft.Page):
     }
     
     nav_manager = NavigationManager(theme_manager, page_callbacks, current_page)
+
+
+    nav_manager = NavigationManager(theme_manager, page_callbacks, current_page)
+
+    # Agregar método para obtener notificaciones no leídas
+    def get_unread_count():
+        if current_user.current and db_manager:
+            return db_manager.get_unread_notifications_count(current_user.current.id)
+        return 0
+
+    nav_manager.get_unread_count = get_unread_count
     
     app_bar = nav_manager.create_app_bar()
     bottom_bar = nav_manager.create_bottom_bar(page)

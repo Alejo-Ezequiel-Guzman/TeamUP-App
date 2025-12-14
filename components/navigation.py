@@ -41,7 +41,8 @@ class NavigationManager:
                     ft.IconButton(
                         icon=ft.Icons.NOTIFICATIONS,
                         icon_color=colors["text_primary"],
-                        tooltip="Notificaciones"
+                        tooltip="Notificaciones",
+                        on_click=self.show_notifications  
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -182,3 +183,7 @@ class NavigationManager:
             bgcolor=self.theme_manager.get_theme_colors()["card_bg"],
             content=self.nav_bar
         )
+    def show_notifications(self, e):
+        """Mostrar página de notificaciones"""
+        if "show_notifications" in self.page_callbacks:
+            self.page_callbacks["show_notifications"]()

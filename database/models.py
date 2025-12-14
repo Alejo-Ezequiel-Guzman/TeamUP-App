@@ -59,3 +59,19 @@ class Follow:
     follower_id: int = 0
     following_id: int = 0
     created_at: Optional[datetime] = None
+
+
+@dataclass
+class Notification:
+    id: Optional[int] = None
+    user_id: int = 0  # Usuario que recibe la notificación
+    from_user_id: int = 0  # Usuario que genera la notificación
+    type: str = ""  # 'like', 'comment', 'follow'
+    post_id: Optional[int] = None  # Si es like o comment
+    message: str = ""
+    is_read: bool = False
+    created_at: Optional[datetime] = None
+    
+    # Joined data
+    from_username: str = ""
+    from_user_avatar: str = ""
